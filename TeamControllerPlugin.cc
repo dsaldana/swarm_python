@@ -33,13 +33,23 @@ GZ_REGISTER_MODEL_PLUGIN(TeamControllerPlugin)
 ///////////// python Wrapper //////////////////////
 PyObject *pName, *pModule, *pDict, *pFunc;
 
+static PyObject*
+robot_set_linear_velocity(PyObject *self, PyObject *args)
+{
+  float x, y, z;
+  PyArg_ParseTuple(args, "fff", &x, &y, &z);
 
+  //this->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
+  //if(!PyArg_ParseTuple(args, ":numargs"))
+  //    return NULL;
+  return Py_BuildValue("i", 5);
+}
 
 
 
 static PyMethodDef EmbMethods[] = {
 //    {"numargs", emb_numargs, METH_VARARGS, "Return the number of arguments received by the process."},
-//    {"multipli", emb_multipli, METH_VARARGS, "Multiplies in c++."},
+    {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Multiplies in c++."},
         {NULL, NULL, 0, NULL}
 };
 
