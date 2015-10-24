@@ -14,3 +14,11 @@ target_link_libraries(TeamControllerPlugin ${SWARM_LIBRARIES})
 # GNUInstallDirst defines CMAKE_INSTALL_LIBDIR, among other things.
 include(GNUInstallDirs)
 install (TARGETS TeamControllerPlugin DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT shlib)
+
+
+
+#### Python libraries #########
+find_package(PythonLibs REQUIRED)
+include_directories(${PYTHON_INCLUDE_DIRS})
+#add_executable(TeamControllerPlugin ${SOURCE_FILES})
+target_link_libraries(TeamControllerPlugin ${PYTHON_LIBRARIES})

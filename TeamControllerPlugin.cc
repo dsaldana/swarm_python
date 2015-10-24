@@ -22,6 +22,10 @@
 #include <sdf/sdf.hh>
 #include "TeamControllerPlugin.hh"
 
+//
+#include <Python.h>
+
+
 using namespace swarm;
 
 GZ_REGISTER_MODEL_PLUGIN(TeamControllerPlugin)
@@ -40,12 +44,21 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf)
 //////////////////////////////////////////////////
 void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info)
 {
+  
+  //Py_SetProgramName("robot");  /* optional but recommended */
+  Py_Initialize();
+  PyRun_SimpleString("from time import time,ctime\n"
+                     "print 'Today is',ctime(time())\n");
+
+  Py_Finalize();
+  
+
   // Simple example for moving each type of robot.
   switch (this->Type())
   {
     case GROUND:
       {
-        this->SetLinearVelocity(ignition::math::Vector3d(1, 0, 0));
+        //this->SetLinearVelocity(ignition::math::Vector3d(1, 0, 0));
         this->SetAngularVelocity(ignition::math::Vector3d(0, 0, 0.1));
         break;
       }
