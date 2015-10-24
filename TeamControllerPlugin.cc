@@ -31,17 +31,17 @@ using namespace swarm;
 GZ_REGISTER_MODEL_PLUGIN(TeamControllerPlugin)
 
 ///////////// python Wrapper //////////////////////
+PyObject *pName, *pModule, *pDict, *pFunc;
+
+
+
+
+
 static PyMethodDef EmbMethods[] = {
 //    {"numargs", emb_numargs, METH_VARARGS, "Return the number of arguments received by the process."},
 //    {"multipli", emb_multipli, METH_VARARGS, "Multiplies in c++."},
-    {NULL, NULL, 0, NULL}
+        {NULL, NULL, 0, NULL}
 };
-
-
-
-
-
-
 
 
 //////////////////////////////////////////////////
@@ -64,10 +64,11 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
   PyRun_SimpleString("sys.path.append(\".\")");
   PyRun_SimpleString("print '---Swarm-python driver--'");
 
-  PyObject *pName, *pModule, *pDict, *pFunc;
 
   pName = PyString_FromString("controller");
   pModule = PyImport_Import(pName);
+  Py_DECREF(pName);
+
 
   // FIXME move this to the finalize method in the driver.
   //Py_Finalize();
@@ -76,6 +77,21 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
 //////////////////////////////////////////////////
 void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
 
+  // Error if there is no python script
+  if (pModule == NULL) {
+    PyErr_Print();
+    return;
+  }
+
+  // obtain function update
+  pFunc = PyObject_GetAttrString(pModule, "update");
+  // todo validate pFunc is callable
+
+  // Arguments for the update function
+  //pArgs = PyTuple_New();
+  // Call the python function
+//  pValue =
+  PyObject_CallObject(pFunc, NULL);
 
 
   // Simple example for moving each type of robot.
