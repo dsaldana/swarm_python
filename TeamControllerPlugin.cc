@@ -30,54 +30,74 @@ using namespace swarm;
 
 GZ_REGISTER_MODEL_PLUGIN(TeamControllerPlugin)
 
+///////////// python Wrapper //////////////////////
+static PyMethodDef EmbMethods[] = {
+//    {"numargs", emb_numargs, METH_VARARGS, "Return the number of arguments received by the process."},
+//    {"multipli", emb_multipli, METH_VARARGS, "Multiplies in c++."},
+    {NULL, NULL, 0, NULL}
+};
+
+
+
+
+
+
+
+
 //////////////////////////////////////////////////
 TeamControllerPlugin::TeamControllerPlugin()
-  : RobotPlugin()
-{
+        : RobotPlugin() {
 }
 
 //////////////////////////////////////////////////
-void TeamControllerPlugin::Load(sdf::ElementPtr _sdf)
-{
-}
+void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
 
-//////////////////////////////////////////////////
-void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info)
-{
-  
-  //Py_SetProgramName("robot");  /* optional but recommended */
+  //Py_SetProgramName(3);  /* optional but recommended */
+  // Initilize python interpreter
   Py_Initialize();
-  PyRun_SimpleString("from time import time,ctime\n"
-                     "print 'Today is',ctime(time())\n");
 
-  Py_Finalize();
-  
+  /////
+  Py_InitModule("robot", EmbMethods);
+
+  //// add the current folder to the workspace
+  PyRun_SimpleString("import sys");
+  PyRun_SimpleString("sys.path.append(\".\")");
+  PyRun_SimpleString("print '---Swarm-python driver--'");
+
+  PyObject *pName, *pModule, *pDict, *pFunc;
+
+  pName = PyString_FromString("controller");
+  pModule = PyImport_Import(pName);
+
+  // FIXME move this to the finalize method in the driver.
+  //Py_Finalize();
+}
+
+//////////////////////////////////////////////////
+void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
+
+
 
   // Simple example for moving each type of robot.
-  switch (this->Type())
-  {
-    case GROUND:
-      {
-        //this->SetLinearVelocity(ignition::math::Vector3d(1, 0, 0));
-        this->SetAngularVelocity(ignition::math::Vector3d(0, 0, 0.1));
-        break;
-      }
-    case ROTOR:
-      {
-        this->SetLinearVelocity(ignition::math::Vector3d(0, 0, 1));
-        this->SetAngularVelocity(ignition::math::Vector3d(0, 0, -0.1));
-        break;
-      }
-    case FIXED_WING:
-      {
-        this->SetLinearVelocity(ignition::math::Vector3d(1, 0, 0));
-        this->SetAngularVelocity(ignition::math::Vector3d(0, -0.4, 0));
-        break;
-      }
-    default:
-      {
-        gzerr << "Unknown vehicle type[" << this->Type() << "]\n";
-        break;
-      }
+  switch (this->Type()) {
+    case GROUND: {
+      //this->SetLinearVelocity(ignition::math::Vector3d(1, 0, 0));
+      this->SetAngularVelocity(ignition::math::Vector3d(0, 0, 0.1));
+      break;
+    }
+    case ROTOR: {
+      this->SetLinearVelocity(ignition::math::Vector3d(0, 0, 1));
+      this->SetAngularVelocity(ignition::math::Vector3d(0, 0, -0.1));
+      break;
+    }
+    case FIXED_WING: {
+      this->SetLinearVelocity(ignition::math::Vector3d(1, 0, 0));
+      this->SetAngularVelocity(ignition::math::Vector3d(0, -0.4, 0));
+      break;
+    }
+    default: {
+      gzerr << "Unknown vehicle type[" << this->Type() << "]\n";
+      break;
+    }
   };
 }

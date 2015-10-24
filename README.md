@@ -17,6 +17,11 @@ Build your plugin (controller):
 Install your plugin:
 
     sudo make install
+    
+
+Run an example:
+    
+    gazebo --verbose worlds/ground_simple_2.world
 
 
 
