@@ -33,12 +33,14 @@ GZ_REGISTER_MODEL_PLUGIN(TeamControllerPlugin)
 ///////////// python Wrapper //////////////////////
 PyObject *pName, *pModule, *pDict, *pFunc;
 
-static PyObject*
-robot_set_linear_velocity(PyObject *self, PyObject *args)
-{
+TeamControllerPlugin *tcplugin;
+
+static PyObject *
+robot_set_linear_velocity(PyObject *self, PyObject *args) {
   float x, y, z;
   PyArg_ParseTuple(args, "fff", &x, &y, &z);
 
+  tcplugin->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
   //this->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
   //if(!PyArg_ParseTuple(args, ":numargs"))
   //    return NULL;
@@ -46,10 +48,9 @@ robot_set_linear_velocity(PyObject *self, PyObject *args)
 }
 
 
-
 static PyMethodDef EmbMethods[] = {
 //    {"numargs", emb_numargs, METH_VARARGS, "Return the number of arguments received by the process."},
-    {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Multiplies in c++."},
+        {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Multiplies in c++."},
         {NULL, NULL, 0, NULL}
 };
 
@@ -61,6 +62,7 @@ TeamControllerPlugin::TeamControllerPlugin()
 
 //////////////////////////////////////////////////
 void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
+  tcplugin = this;
 
   //Py_SetProgramName(3);  /* optional but recommended */
   // Initilize python interpreter
