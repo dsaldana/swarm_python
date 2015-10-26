@@ -35,21 +35,19 @@ PyObject *pName, *pModule, *pDict, *pFunc;
 
 TeamControllerPlugin *tcplugin;
 
-static PyObject *
+PyObject *
 robot_set_linear_velocity(PyObject *self, PyObject *args) {
+  printf("-%d", tcplugin->id_robot);
   float x, y, z;
   PyArg_ParseTuple(args, "fff", &x, &y, &z);
 
-  tcplugin->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
-  //this->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
+  //tcplugin->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
   //if(!PyArg_ParseTuple(args, ":numargs"))
   //    return NULL;
   return Py_BuildValue("i", 5);
 }
 
-
-static PyMethodDef EmbMethods[] = {
-//    {"numargs", emb_numargs, METH_VARARGS, "Return the number of arguments received by the process."},
+PyMethodDef EmbMethods[] = {
         {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Multiplies in c++."},
         {NULL, NULL, 0, NULL}
 };
@@ -60,30 +58,99 @@ TeamControllerPlugin::TeamControllerPlugin()
         : RobotPlugin() {
 }
 
-//////////////////////////////////////////////////
-void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
-  tcplugin = this;
+static int initializated_python = false;
 
-  //Py_SetProgramName(3);  /* optional but recommended */
-  // Initilize python interpreter
+
+void init_python() {
+  // initialize Python
   Py_Initialize();
 
-  /////
+  // Thread python
+  PyEval_InitThreads();
+
+  ///// Control methods //////
   Py_InitModule("robot", EmbMethods);
 
   //// add the current folder to the workspace
   PyRun_SimpleString("import sys");
   PyRun_SimpleString("sys.path.append(\".\")");
-  PyRun_SimpleString("print '---Swarm-python driver--'");
-
 
   pName = PyString_FromString("controller");
   pModule = PyImport_Import(pName);
-  Py_DECREF(pName);
+}
+
+//////////////////////////////////////////////////
+void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
+  tcplugin = this;
+
+  // Initialize python only once!
+  if (!initializated_python) {
+    init_python();
+    id_robot = 0;
+  } else {
+    init_python();
+    id_robot = 2;
+  }
+  printf("Starting robot %d\n", id_robot);
+  initializated_python = true;
 
 
-  // FIXME move this to the finalize method in the driver.
+  PyRun_SimpleString("print '---Swarm-python driver--'");
+
+
+  pFunc = PyObject_GetAttrString(pModule, "update");
+//  // todo validate pFunc is callable
+//
+//  // Run update function
+  PyObject_CallObject(pFunc, NULL);
+//
+
+
   //Py_Finalize();
+
+
+//  // initialize Python
+//  Py_Initialize();
+//// initialize thread support
+//  PyEval_InitThreads();
+////
+//////// init thread python
+////  PyThreadState * mainThreadState = NULL;
+////// save a pointer to the main PyThreadState object
+////  mainThreadState = PyThreadState_Get();
+//
+////
+////
+//  // get the global lock
+////  PyEval_AcquireLock();
+//// get a reference to the PyInterpreterState
+////  PyInterpreterState *mainInterpreterState = mainThreadState->interp;
+////// create a thread state object for this thread
+////  PyThreadState *myThreadState = PyThreadState_New(mainInterpreterState);
+//
+//
+//  /////
+//  Py_InitModule("robot", EmbMethods);
+//
+//  //// add the current folder to the workspace
+//  PyRun_SimpleString("import sys");
+//  PyRun_SimpleString("sys.path.append(\".\")");
+//  PyRun_SimpleString("print '---Swarm-python driver--'");
+//
+//
+//  pName = PyString_FromString("controller");
+//  pModule = PyImport_Import(pName);
+////  Py_DECREF(pName);
+//
+//
+//// free the lock
+//  PyEval_ReleaseLock();
+//
+////  PyRun_SimpleString("import robot");
+////  PyRun_SimpleString("robot.set_linear_velocity(1,0,0)");
+//
+//  // FIXME move this to the finalize method in the driver.
+////  Py_Finalize();
 }
 
 //////////////////////////////////////////////////
@@ -95,15 +162,15 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
     return;
   }
 
-  // obtain function update
+//  // obtain function update
   pFunc = PyObject_GetAttrString(pModule, "update");
-  // todo validate pFunc is callable
-
-  // Arguments for the update function
-  //pArgs = PyTuple_New();
-  // Call the python function
-//  pValue =
+////  // todo validate pFunc is callable
+////
+////  // Run update function
+  printf("Starting robot %d\n", id_robot);
   PyObject_CallObject(pFunc, NULL);
+////
+//
 
 
   // Simple example for moving each type of robot.

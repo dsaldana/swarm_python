@@ -31,6 +31,7 @@ namespace swarm
   /// \brief Class that shows a potential agent controller using the Swarm API
   class TeamControllerPlugin : public swarm::RobotPlugin
   {
+    public:  int id_robot = 0;
     /// \brief Class constructor.
     public: TeamControllerPlugin();
 
