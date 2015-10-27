@@ -5,8 +5,11 @@ import robot
 
 
 
-def update():
+def update(robot_id):
     #print "updating"
-    #print "fd",
-    #robot.set_linear_velocity(1,0,0)
-    pass
+    #print "fd", robot_id
+#    print "as", 
+    
+    robot.set_linear_velocity(robot_id, 1,0,0)
+    #print "m=",multiply(2,3)
+    return

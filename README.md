@@ -23,9 +23,3 @@ Run an example:
     
     gazebo --verbose worlds/ground_simple_2.world
 
-# Error
-We want to create a PyCFunction with a non-static method. 
-The current problem is described here:
-[http://stackoverflow.com/questions/22869709/how-do-i-pass-a-instance-member-function-as-a-pycfunction-type-using-the-python]
-
-
