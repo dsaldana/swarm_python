@@ -33,21 +33,39 @@ GZ_REGISTER_MODEL_PLUGIN(TeamControllerPlugin)
 ///////////// python Wrapper //////////////////////
 PyObject *pName, *pModule, *pDict, *pFunc;
 
-TeamControllerPlugin *tcplugin;
 
-PyObject *
-TeamControllerPlugin::robot_set_linear_velocity(PyObject *self, PyObject *args) {
-  printf("-%d", tcplugin->id_robot);
+TeamControllerPlugin *tcplugins[1000];
+
+
+static PyObject *
+robot_set_linear_velocity(PyObject *self, PyObject *args) {
+//
+  int robot_id;
   float x, y, z;
-  PyArg_ParseTuple(args, "fff", &x, &y, &z);
+  PyArg_ParseTuple(args, "ifff", &robot_id, &x, &y, &z);
 
-  //tcplugin->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
-  //if(!PyArg_ParseTuple(args, ":numargs"))
-  //    return NULL;
+  printf("setvel-%d\n", robot_id);
+  //tcplugins[robot_id]->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
+
+
   return Py_BuildValue("i", 5);
 }
 
+static PyObject*
+robot_multipli(PyObject *self, PyObject *args)
+{
+  int i, j;
+  PyArg_ParseTuple(args, "ii", &i, &j);
+  return Py_BuildValue("i", i*j);
+}
 
+
+
+PyMethodDef EmbMethods[] = {
+        {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Multiplies in c++."},
+        {"multiply", robot_multipli, METH_VARARGS, "Multiplies in c++."},
+        {NULL, NULL, 0, NULL}
+};
 
 
 //////////////////////////////////////////////////
@@ -60,37 +78,33 @@ static int initializated_python = false;
 
 //////////////////////////////////////////////////
 void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
-  tcplugin = this;
 
   // Initialize python only once!
   if (!initializated_python) {
+    ////////////////////////////////////// initialize Python ////////////////
+    Py_Initialize();
+    // Thread python
+//  PyEval_InitThreads();
+
+    //// add the current folder to the workspace
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("sys.path.append(\".\")");
+
+
+    /////////////////////////////////// Control methods ////////////////////////
+    Py_InitModule("robot", EmbMethods);
+    pName = PyString_FromString("controller");
+    pModule = PyImport_Import(pName);
+
+
     id_robot = 0;
   } else {
-    id_robot = 2;
+    id_robot = 1;
   }
-
-  ////////////////////////////////////// initialize Python ////////////////
-  Py_Initialize();
-
-  // Thread python
-  PyEval_InitThreads();
-
-  //// add the current folder to the workspace
-  PyRun_SimpleString("import sys");
-  PyRun_SimpleString("sys.path.append(\".\")");
-
-  /////////////////////////////////// Control methods ////////////////////////
-
-  PyMethodDef EmbMethods[] = {
-          {"set_linear_velocity", robot_set_linear_velocity,  METH_VARARGS |
-                                                                            METH_CLASS, "Multiplies in c++."},
-          {NULL, NULL, 0, NULL}
-  };
+  tcplugins[id_robot] = this;
 
 
-  Py_InitModule("robot", EmbMethods);
-  pName = PyString_FromString("controller");
-  pModule = PyImport_Import(pName);
+
 
 
   /////////////
@@ -101,11 +115,11 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
   PyRun_SimpleString("print '---Swarm-python driver--'");
 
 
-    pFunc = PyObject_GetAttrString(pModule, "update");
+//  pFunc = PyObject_GetAttrString(pModule, "update");
 //  // todo validate pFunc is callable
 //
 //  // Run update function
-    PyObject_CallObject(pFunc, NULL);
+//  PyObject_CallObject(pFunc, NULL);
 }
 
 //////////////////////////////////////////////////
@@ -120,10 +134,16 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
 //  // obtain function update
   pFunc = PyObject_GetAttrString(pModule, "update");
 ////  // todo validate pFunc is callable
-////
+
+  // robot id as argument
+  PyObject * pArgs, *pValue;
+  pArgs = PyTuple_New(1);
+  pValue = PyInt_FromLong(this->id_robot);
+  PyTuple_SetItem(pArgs, 0, pValue);
+
 ////  // Run update function
-  printf("robot %d\n", tcplugin->id_robot);
-  PyObject_CallObject(pFunc, NULL);
+  //printf("robot %d\n", this->id_robot);
+  PyObject_CallObject(pFunc, pArgs);
 ////
 //
 
@@ -132,7 +152,7 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
   switch (this->Type()) {
     case GROUND: {
       //this->SetLinearVelocity(ignition::math::Vector3d(1, 0, 0));
-      this->SetAngularVelocity(ignition::math::Vector3d(0, 0, 0.1));
+      tcplugins[id_robot]->SetAngularVelocity(ignition::math::Vector3d(0, 0, 0.1));
       break;
     }
     case ROTOR: {
