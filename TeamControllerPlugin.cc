@@ -36,7 +36,7 @@ PyObject *pName, *pModule, *pDict, *pFunc;
 TeamControllerPlugin *tcplugin;
 
 PyObject *
-robot_set_linear_velocity(PyObject *self, PyObject *args) {
+TeamControllerPlugin::robot_set_linear_velocity(PyObject *self, PyObject *args) {
   printf("-%d", tcplugin->id_robot);
   float x, y, z;
   PyArg_ParseTuple(args, "fff", &x, &y, &z);
@@ -47,10 +47,7 @@ robot_set_linear_velocity(PyObject *self, PyObject *args) {
   return Py_BuildValue("i", 5);
 }
 
-PyMethodDef EmbMethods[] = {
-        {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Multiplies in c++."},
-        {NULL, NULL, 0, NULL}
-};
+
 
 
 //////////////////////////////////////////////////
@@ -61,36 +58,42 @@ TeamControllerPlugin::TeamControllerPlugin()
 static int initializated_python = false;
 
 
-void init_python() {
-  // initialize Python
-  Py_Initialize();
-
-  // Thread python
-  PyEval_InitThreads();
-
-  ///// Control methods //////
-  Py_InitModule("robot", EmbMethods);
-
-  //// add the current folder to the workspace
-  PyRun_SimpleString("import sys");
-  PyRun_SimpleString("sys.path.append(\".\")");
-
-  pName = PyString_FromString("controller");
-  pModule = PyImport_Import(pName);
-}
-
 //////////////////////////////////////////////////
 void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
   tcplugin = this;
 
   // Initialize python only once!
   if (!initializated_python) {
-    init_python();
     id_robot = 0;
   } else {
-    init_python();
     id_robot = 2;
   }
+
+  ////////////////////////////////////// initialize Python ////////////////
+  Py_Initialize();
+
+  // Thread python
+  PyEval_InitThreads();
+
+  //// add the current folder to the workspace
+  PyRun_SimpleString("import sys");
+  PyRun_SimpleString("sys.path.append(\".\")");
+
+  /////////////////////////////////// Control methods ////////////////////////
+
+  PyMethodDef EmbMethods[] = {
+          {"set_linear_velocity", robot_set_linear_velocity,  METH_VARARGS |
+                                                                            METH_CLASS, "Multiplies in c++."},
+          {NULL, NULL, 0, NULL}
+  };
+
+
+  Py_InitModule("robot", EmbMethods);
+  pName = PyString_FromString("controller");
+  pModule = PyImport_Import(pName);
+
+
+  /////////////
   printf("Starting robot %d\n", id_robot);
   initializated_python = true;
 
@@ -98,59 +101,11 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
   PyRun_SimpleString("print '---Swarm-python driver--'");
 
 
-  pFunc = PyObject_GetAttrString(pModule, "update");
+    pFunc = PyObject_GetAttrString(pModule, "update");
 //  // todo validate pFunc is callable
 //
 //  // Run update function
-  PyObject_CallObject(pFunc, NULL);
-//
-
-
-  //Py_Finalize();
-
-
-//  // initialize Python
-//  Py_Initialize();
-//// initialize thread support
-//  PyEval_InitThreads();
-////
-//////// init thread python
-////  PyThreadState * mainThreadState = NULL;
-////// save a pointer to the main PyThreadState object
-////  mainThreadState = PyThreadState_Get();
-//
-////
-////
-//  // get the global lock
-////  PyEval_AcquireLock();
-//// get a reference to the PyInterpreterState
-////  PyInterpreterState *mainInterpreterState = mainThreadState->interp;
-////// create a thread state object for this thread
-////  PyThreadState *myThreadState = PyThreadState_New(mainInterpreterState);
-//
-//
-//  /////
-//  Py_InitModule("robot", EmbMethods);
-//
-//  //// add the current folder to the workspace
-//  PyRun_SimpleString("import sys");
-//  PyRun_SimpleString("sys.path.append(\".\")");
-//  PyRun_SimpleString("print '---Swarm-python driver--'");
-//
-//
-//  pName = PyString_FromString("controller");
-//  pModule = PyImport_Import(pName);
-////  Py_DECREF(pName);
-//
-//
-//// free the lock
-//  PyEval_ReleaseLock();
-//
-////  PyRun_SimpleString("import robot");
-////  PyRun_SimpleString("robot.set_linear_velocity(1,0,0)");
-//
-//  // FIXME move this to the finalize method in the driver.
-////  Py_Finalize();
+    PyObject_CallObject(pFunc, NULL);
 }
 
 //////////////////////////////////////////////////
@@ -167,7 +122,7 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
 ////  // todo validate pFunc is callable
 ////
 ////  // Run update function
-  printf("Starting robot %d\n", id_robot);
+  printf("robot %d\n", tcplugin->id_robot);
   PyObject_CallObject(pFunc, NULL);
 ////
 //

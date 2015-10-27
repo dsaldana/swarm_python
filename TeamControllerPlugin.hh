@@ -26,6 +26,8 @@
 #include <gazebo/common/UpdateInfo.hh>
 #include <swarm/RobotPlugin.hh>
 
+#include <Python.h>
+
 namespace swarm
 {
   /// \brief Class that shows a potential agent controller using the Swarm API
@@ -43,6 +45,8 @@ namespace swarm
 
     // Documentation inherited.
     private: virtual void Update(const gazebo::common::UpdateInfo &_info);
+
+    public:  PyObject *robot_set_linear_velocity(PyObject *self, PyObject *args);
   };
 }
 
