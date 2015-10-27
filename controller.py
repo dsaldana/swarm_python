@@ -1,11 +1,12 @@
 import robot
 
-print "hello", robot.set_linear_velocity(31,22,55)
+print "hello", robot.set_linear_velocity(1,0,0)
 
 
 
 
 def update():
     #print "updating"
-    print "fd", robot.set_linear_velocity(31,22,55)
+    #print "fd",
+    robot.set_linear_velocity(1,0,0)
     pass
