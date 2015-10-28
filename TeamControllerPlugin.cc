@@ -35,18 +35,34 @@ PyObject *pName, *pModule, *pDict, *pFunc;
 TeamControllerPlugin *tcplugins[1000];
 
 
-
-static PyObject*
-robot_set_linear_velocity(PyObject *self, PyObject *args)
-{
+/**
+ * Python function for: Set linear velocity
+ */
+static PyObject *
+robot_set_linear_velocity(PyObject *self, PyObject *args) {
   int robot_id;
   float x, y, z;
   PyArg_ParseTuple(args, "ifff", &robot_id, &x, &y, &z);
-  //if(!PyArg_ParseTuple(args, ":numargs"))
-  //    return NULL;
 
-  //this->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
+  // Send to the right controller.
   tcplugins[robot_id]->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
+
+  printf("setvel-%d\n", robot_id);
+
+  return Py_BuildValue("i", robot_id);
+}
+
+/**
+ * Python function for: Set linear velocity
+ */
+static PyObject *
+robot_set_angular_velocity(PyObject *self, PyObject *args) {
+  int robot_id;
+  float x, y, z;
+  PyArg_ParseTuple(args, "ifff", &robot_id, &x, &y, &z);
+
+  // Send to the right controller.
+  tcplugins[robot_id]->SetAngularVelocity(ignition::math::Vector3d(0, 0, -0.1));
 
   printf("setvel-%d\n", robot_id);
 
@@ -56,30 +72,28 @@ robot_set_linear_velocity(PyObject *self, PyObject *args)
 
 
 static PyMethodDef EmbMethods[] = {
-//    {"numargs", emb_numargs, METH_VARARGS, "Return the number of arguments received by the process."},
-    {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Multiplies in c++."},
+        {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Multiplies in c++."},
         {NULL, NULL, 0, NULL}
 };
 
 
 static int initializated_python = false;
+static int robot_counter = 0;
 //////////////////////////////////////////////////
 TeamControllerPlugin::TeamControllerPlugin()
         : RobotPlugin() {
 
+  id_robot = robot_counter;
+  robot_counter++;
   if (!initializated_python) {
-    id_robot = 0;
     initializated_python = true;
-  } else {
-    id_robot = 1;
   }
+
   tcplugins[id_robot] = this;
 }
 
 //////////////////////////////////////////////////
 void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
-
-  //Py_SetProgramName(3);  /* optional but recommended */
   // Initilize python interpreter
   Py_Initialize();
 
@@ -92,13 +106,10 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
   PyRun_SimpleString("print '---Swarm-python driver--'");
 
 
+  // Import controller.py
   pName = PyString_FromString("controller");
   pModule = PyImport_Import(pName);
   Py_DECREF(pName);
-
-
-  // FIXME move this to the finalize method in the driver.
-  //Py_Finalize();
 }
 
 //////////////////////////////////////////////////
@@ -110,42 +121,17 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
     return;
   }
 
-  // obtain function update
+  // Obtain function update
   pFunc = PyObject_GetAttrString(pModule, "update");
   // todo validate pFunc is callable
 
 
-  // robot id as argument
+  // Robot id as argument
   PyObject * pArgs, *pValue;
   pArgs = PyTuple_New(1);
   pValue = PyInt_FromLong(this->id_robot);
   PyTuple_SetItem(pArgs, 0, pValue);
 
-  // Call the python function
-//  pValue =
+  // Call UPDATE function in python.
   PyObject_CallObject(pFunc, pArgs);
-
-
-  // Simple example for moving each type of robot.
-  switch (this->Type()) {
-    case GROUND: {
-      //this->SetLinearVelocity(ignition::math::Vector3d(1, 0, 0));
-      this->SetAngularVelocity(ignition::math::Vector3d(0, 0, 0.1));
-      break;
-    }
-    case ROTOR: {
-      this->SetLinearVelocity(ignition::math::Vector3d(0, 0, 1));
-      this->SetAngularVelocity(ignition::math::Vector3d(0, 0, -0.1));
-      break;
-    }
-    case FIXED_WING: {
-      this->SetLinearVelocity(ignition::math::Vector3d(1, 0, 0));
-      this->SetAngularVelocity(ignition::math::Vector3d(0, -0.4, 0));
-      break;
-    }
-    default: {
-      gzerr << "Unknown vehicle type[" << this->Type() << "]\n";
-      break;
-    }
-  };
 }
