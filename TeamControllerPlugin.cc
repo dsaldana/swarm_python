@@ -73,7 +73,6 @@ robot_neighbors(PyObject *self, PyObject *args) {
 
   // Send to the right controller.
   const std::vector<std::string> &neighbors = tcplugins[robot_id]->Neighbors();
-  //tcplugins[robot_id]->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
 
   PyObject *pArgs = PyTuple_New(neighbors.size());
 
@@ -89,11 +88,34 @@ robot_neighbors(PyObject *self, PyObject *args) {
 }
 
 
+/**
+ * Python function for: ask for Neighbors.
+ */
+static PyObject *
+robot_pose(PyObject *self, PyObject *args) {
+  int robot_id;
+  PyArg_ParseTuple(args, "i", &robot_id);
+
+  // Get pose and altitude.
+  double latitude, longitude, altitude;
+  tcplugins[robot_id]->Pose(latitude, longitude, altitude);
+
+  PyObject *pArgs = PyTuple_New(3);
+  PyTuple_SetItem(pArgs, 0, Py_BuildValue("d", latitude));
+  PyTuple_SetItem(pArgs, 1, Py_BuildValue("d", longitude));
+  PyTuple_SetItem(pArgs, 2, Py_BuildValue("d", altitude));
+
+
+  return pArgs;
+}
+
+
 
 static PyMethodDef EmbMethods[] = {
         {"set_linear_velocity",  robot_set_linear_velocity,  METH_VARARGS, "Linear velocity."},
         {"set_angular_velocity", robot_set_angular_velocity, METH_VARARGS, "Angular velocity."},
         {"neighbors", robot_neighbors, METH_VARARGS, "Neighbors."},
+        {"pose",  robot_pose,  METH_VARARGS, "Robot pose."},
         {NULL, NULL, 0, NULL}
 };
 
