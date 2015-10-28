@@ -50,7 +50,7 @@ robot_set_linear_velocity(PyObject *self, PyObject *args) {
 }
 
 /**
- * Python function for: Set linear velocity
+ * Python function for: Set angular velocity
  */
 static PyObject *
 robot_set_angular_velocity(PyObject *self, PyObject *args) {
@@ -63,17 +63,44 @@ robot_set_angular_velocity(PyObject *self, PyObject *args) {
   return Py_BuildValue("i", robot_id);
 }
 
+/**
+ * Python function for: ask for Neighbors.
+ */
+static PyObject *
+robot_neighbors(PyObject *self, PyObject *args) {
+  int robot_id;
+  PyArg_ParseTuple(args, "i", &robot_id);
+
+  // Send to the right controller.
+  const std::vector<std::string> &neighbors = tcplugins[robot_id]->Neighbors();
+  //tcplugins[robot_id]->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
+
+  PyObject *pArgs = PyTuple_New(neighbors.size());
+
+  for (int i = 0; i < neighbors.size(); ++i) {
+    PyObject *pValue = Py_BuildValue("s", neighbors.at(i).c_str());
+
+    /* pValue reference stolen here: */
+    PyTuple_SetItem(pArgs, i, pValue);
+  }
+
+
+  return pArgs;
+}
+
 
 
 static PyMethodDef EmbMethods[] = {
-        {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Linear velocity."},
+        {"set_linear_velocity",  robot_set_linear_velocity,  METH_VARARGS, "Linear velocity."},
         {"set_angular_velocity", robot_set_angular_velocity, METH_VARARGS, "Angular velocity."},
+        {"neighbors", robot_neighbors, METH_VARARGS, "Neighbors."},
         {NULL, NULL, 0, NULL}
 };
 
 
 static int initializated_python = false;
 static int robot_counter = 0;
+
 //////////////////////////////////////////////////
 TeamControllerPlugin::TeamControllerPlugin()
         : RobotPlugin() {
@@ -129,4 +156,14 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
 
   // Call UPDATE function in python.
   PyObject_CallObject(pFunc, pArgs);
+
+//  const std::vector<std::string> &vector1 = Neighbors();
+//
+//  for(int i=0; i<vector1.size(); i++){
+//    std::cout << vector1.at(i)<<"\n";
+//  }
+
+//  printf("--------------");
+
+
 }
