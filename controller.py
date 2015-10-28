@@ -9,5 +9,6 @@ def update(robot_id):
     
     #print robot.neighbors(robot_id)
     #print "pose:", robot.pose(robot_id)
-    print "search_area:", robot.search_area(robot_id)
+    #print "search_area:", robot.search_area(robot_id)
+    print "camera",robot_id,":", robot.camera(robot_id)
 

@@ -74,10 +74,10 @@ robot_neighbors(PyObject *self, PyObject *args) {
   // Send to the right controller.
   const std::vector<std::string> &neighbors = tcplugins[robot_id]->Neighbors();
 
-  PyObject *pArgs = PyTuple_New(neighbors.size());
+  PyObject * pArgs = PyTuple_New(neighbors.size());
 
   for (int i = 0; i < neighbors.size(); ++i) {
-    PyObject *pValue = Py_BuildValue("s", neighbors.at(i).c_str());
+    PyObject * pValue = Py_BuildValue("s", neighbors.at(i).c_str());
 
     /* pValue reference stolen here: */
     PyTuple_SetItem(pArgs, i, pValue);
@@ -89,7 +89,7 @@ robot_neighbors(PyObject *self, PyObject *args) {
 
 
 /**
- * Python function for: ask for Neighbors.
+ * Python function for: ask for GPS localization.
  */
 static PyObject *
 robot_pose(PyObject *self, PyObject *args) {
@@ -100,7 +100,7 @@ robot_pose(PyObject *self, PyObject *args) {
   double latitude, longitude, altitude;
   tcplugins[robot_id]->Pose(latitude, longitude, altitude);
 
-  PyObject *pArgs = PyTuple_New(3);
+  PyObject * pArgs = PyTuple_New(3);
   PyTuple_SetItem(pArgs, 0, Py_BuildValue("d", latitude));
   PyTuple_SetItem(pArgs, 1, Py_BuildValue("d", longitude));
   PyTuple_SetItem(pArgs, 2, Py_BuildValue("d", altitude));
@@ -110,9 +110,8 @@ robot_pose(PyObject *self, PyObject *args) {
 }
 
 
-
 /**
- * Python function for: ask for Neighbors.
+ * Python function for: SearchArea function.
  */
 static PyObject *
 robot_search_area(PyObject *self, PyObject *args) {
@@ -123,7 +122,7 @@ robot_search_area(PyObject *self, PyObject *args) {
   double minLatitude, maxLatitude, minLongitude, maxLongitude;
   tcplugins[robot_id]->SearchArea(minLatitude, maxLatitude, minLongitude, maxLongitude);
 
-  PyObject *pArgs = PyTuple_New(4);
+  PyObject * pArgs = PyTuple_New(4);
   PyTuple_SetItem(pArgs, 0, Py_BuildValue("d", minLatitude));
   PyTuple_SetItem(pArgs, 1, Py_BuildValue("d", maxLatitude));
   PyTuple_SetItem(pArgs, 2, Py_BuildValue("d", minLongitude));
@@ -134,14 +133,52 @@ robot_search_area(PyObject *self, PyObject *args) {
 
 
 /**
+ * Python function for: SearchArea function.
+ */
+static PyObject *
+robot_camera(PyObject *self, PyObject *args) {
+  int robot_id;
+  PyArg_ParseTuple(args, "i", &robot_id);
+
+  // Get the camera information
+  ImageData img;
+  if (tcplugins[robot_id]->Image(img)) {
+    PyObject * camera_locs = PyTuple_New(img.objects.size());
+    int i = 0;
+    for (auto const obj : img.objects) {
+      PyObject * camera_obj = PyTuple_New(1);
+      PyTuple_SetItem(camera_obj, 0, Py_BuildValue("s", obj.first.c_str()));
+      // TODO obtain pose
+      double x, y, z, p, r, ya;
+//      obj.second.Pose3(x, y, z, p, r, ya);
+//      PyTuple_SetItem(camera_obj, 1, Py_BuildValue("d", x));
+//      PyTuple_SetItem(camera_obj, 2, Py_BuildValue("d", y));
+//      PyTuple_SetItem(camera_obj, 3, Py_BuildValue("d", z));
+//      PyTuple_SetItem(camera_obj, 4, Py_BuildValue("d", p));
+//      PyTuple_SetItem(camera_obj, 5, Py_BuildValue("d", r));
+//      PyTuple_SetItem(camera_obj, 6, Py_BuildValue("d", ya));
+//
+
+      PyTuple_SetItem(camera_locs, i++, camera_obj);
+    }
+    return camera_locs;
+  }
+
+
+  return Py_BuildValue("i", -1);
+}
+
+
+/**
  * Python methods.
  */
 static PyMethodDef EmbMethods[] = {
         {"set_linear_velocity",  robot_set_linear_velocity,  METH_VARARGS, "Linear velocity."},
         {"set_angular_velocity", robot_set_angular_velocity, METH_VARARGS, "Angular velocity."},
-        {"neighbors", robot_neighbors, METH_VARARGS, "Neighbors."},
-        {"pose",  robot_pose,  METH_VARARGS, "Robot pose using GPS."},
-        {"search_area",  robot_search_area,  METH_VARARGS, "Search area for GPS."},
+        {"neighbors",            robot_neighbors,            METH_VARARGS, "Neighbors."},
+        {"pose",                 robot_pose,                 METH_VARARGS, "Robot pose using GPS."},
+        {"search_area",          robot_search_area,          METH_VARARGS, "Search area for GPS."},
+        {"camera",               robot_camera,               METH_VARARGS, "Search area for GPS."},
         {NULL, NULL, 0, NULL}
 };
 
