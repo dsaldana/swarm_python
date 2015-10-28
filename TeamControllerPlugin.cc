@@ -46,9 +46,6 @@ robot_set_linear_velocity(PyObject *self, PyObject *args) {
 
   // Send to the right controller.
   tcplugins[robot_id]->SetLinearVelocity(ignition::math::Vector3d(x, y, z));
-
-  printf("setvel-%d\n", robot_id);
-
   return Py_BuildValue("i", robot_id);
 }
 
@@ -62,17 +59,15 @@ robot_set_angular_velocity(PyObject *self, PyObject *args) {
   PyArg_ParseTuple(args, "ifff", &robot_id, &x, &y, &z);
 
   // Send to the right controller.
-  tcplugins[robot_id]->SetAngularVelocity(ignition::math::Vector3d(0, 0, -0.1));
-
-  printf("setvel-%d\n", robot_id);
-
+  tcplugins[robot_id]->SetAngularVelocity(ignition::math::Vector3d(x, y, z));
   return Py_BuildValue("i", robot_id);
 }
 
 
 
 static PyMethodDef EmbMethods[] = {
-        {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Multiplies in c++."},
+        {"set_linear_velocity", robot_set_linear_velocity, METH_VARARGS, "Linear velocity."},
+        {"set_angular_velocity", robot_set_angular_velocity, METH_VARARGS, "Angular velocity."},
         {NULL, NULL, 0, NULL}
 };
 
@@ -94,7 +89,7 @@ TeamControllerPlugin::TeamControllerPlugin()
 
 //////////////////////////////////////////////////
 void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
-  // Initilize python interpreter
+  // Initialize python interpreter
   Py_Initialize();
 
   /////
