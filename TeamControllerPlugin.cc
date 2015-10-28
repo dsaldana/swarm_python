@@ -111,11 +111,37 @@ robot_pose(PyObject *self, PyObject *args) {
 
 
 
+/**
+ * Python function for: ask for Neighbors.
+ */
+static PyObject *
+robot_search_area(PyObject *self, PyObject *args) {
+  int robot_id;
+  PyArg_ParseTuple(args, "i", &robot_id);
+
+  // Get pose and altitude.
+  double minLatitude, maxLatitude, minLongitude, maxLongitude;
+  tcplugins[robot_id]->SearchArea(minLatitude, maxLatitude, minLongitude, maxLongitude);
+
+  PyObject *pArgs = PyTuple_New(4);
+  PyTuple_SetItem(pArgs, 0, Py_BuildValue("d", minLatitude));
+  PyTuple_SetItem(pArgs, 1, Py_BuildValue("d", maxLatitude));
+  PyTuple_SetItem(pArgs, 2, Py_BuildValue("d", minLongitude));
+  PyTuple_SetItem(pArgs, 3, Py_BuildValue("d", maxLongitude));
+
+  return pArgs;
+}
+
+
+/**
+ * Python methods.
+ */
 static PyMethodDef EmbMethods[] = {
         {"set_linear_velocity",  robot_set_linear_velocity,  METH_VARARGS, "Linear velocity."},
         {"set_angular_velocity", robot_set_angular_velocity, METH_VARARGS, "Angular velocity."},
         {"neighbors", robot_neighbors, METH_VARARGS, "Neighbors."},
-        {"pose",  robot_pose,  METH_VARARGS, "Robot pose."},
+        {"pose",  robot_pose,  METH_VARARGS, "Robot pose using GPS."},
+        {"search_area",  robot_search_area,  METH_VARARGS, "Search area for GPS."},
         {NULL, NULL, 0, NULL}
 };
 
