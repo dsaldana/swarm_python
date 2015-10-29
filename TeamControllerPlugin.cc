@@ -31,7 +31,7 @@ using namespace swarm;
 GZ_REGISTER_MODEL_PLUGIN(TeamControllerPlugin)
 
 ///////////// python Wrapper //////////////////////
-PyObject *pName, *pModule, *pDict, *pFunc;
+PyObject *pName, *pModule, *pDict, *pUpdateFunc, *pOnDataReceivedFunc;
 TeamControllerPlugin *tcplugins[1000];
 
 
@@ -95,11 +95,11 @@ robot_send_to(PyObject *self, PyObject *args) {
   int robot_id;
   char *data, *dest;
 
-  // Get argunments
+  // Get arguments
   PyArg_ParseTuple(args, "iss", &robot_id, &data, &dest);
 
   // Send message
-  std::string sdata(dest);
+  std::string sdata(data);
   std::string sdest(dest);
   bool sent = tcplugins[robot_id]->SendTo(sdata,sdest);
 
@@ -243,20 +243,19 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
 
   ////////////////////////// Communication ////////////////////////////
   // Read the <num_messages> SDF parameter.
-//  if (!_sdf->HasElement("num_messages"))
-//  {
-//    gzerr << "TeamControllerPlugin::Load(): Unable to find the <num_messages> "
-//    << "parameter" << std::endl;
-//    return;
-//  }
-//
-////  this->numMessageToSend = _sdf->Get<int>("num_messages");
-//
-//  // Bind on my local address and default port.
-//  this->Bind(&TeamControllerPlugin::OnDataReceived, this, this->Host());
-//
-//  // Bind on the multicast group and default port.
-//  this->Bind(&TeamControllerPlugin::OnDataReceived, this, this->kMulticast);
+  if (!_sdf->HasElement("num_messages")) {
+    gzerr << "TeamControllerPlugin::Load(): Unable to find the <num_messages> "
+    << "parameter" << std::endl;
+    return;
+  }
+
+//  this->numMessageToSend = _sdf->Get<int>("num_messages");
+
+  // Bind on my local address and default port.
+  this->Bind(&TeamControllerPlugin::OnDataReceived, this, this->Host());
+
+  // Bind on the multicast group and default port.
+  this->Bind(&TeamControllerPlugin::OnDataReceived, this, this->kMulticast);
 }
 
 //////////////////////////////////////////////////
@@ -269,38 +268,43 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
   }
 
   // Obtain function update
-  pFunc = PyObject_GetAttrString(pModule, "update");
-  // todo validate pFunc is callable
+  pUpdateFunc = PyObject_GetAttrString(pModule, "update");
+  // todo validate pUpdateFunc is callable
 
 
   // Robot id as argument
-  PyObject * pArgs, *pValue;
+  PyObject * pArgs;
   pArgs = PyTuple_New(1);
-  pValue = PyInt_FromLong(this->id_robot);
-  PyTuple_SetItem(pArgs, 0, pValue);
+  PyTuple_SetItem(pArgs, 0, PyInt_FromLong(this->id_robot));
 
   // Call UPDATE function in python.
-  PyObject_CallObject(pFunc, pArgs);
+  PyObject_CallObject(pUpdateFunc, pArgs);
 
-//  const std::vector<std::string> &vector1 = Neighbors();
-//
-//  for(int i=0; i<vector1.size(); i++){
-//    std::cout << vector1.at(i)<<"\n";
-//  }
-
-//  printf("--------------");
 }
 
 
 
 ////////////////////////////////////////////////////
-//void TeamControllerPlugin::OnDataReceived(const std::string &_srcAddress,
-//                                          const std::string &_dstAddress, const uint32_t _dstPort,
-//                                          const std::string &_data)
-//{
+void TeamControllerPlugin::OnDataReceived(const std::string &_srcAddress,
+                                          const std::string &_dstAddress, const uint32_t _dstPort,
+                                          const std::string &_data)
+{
 //  gzmsg << "---" << std::endl;
 //  gzmsg << "[" << this->Host() << "] New message received" << std::endl;
 //  gzmsg << "\tFrom: [" << _srcAddress << "]" << std::endl;
 //  gzmsg << "\tTo: [" << _dstAddress << ":" << _dstPort << "]" << std::endl;
 //  gzmsg << "\tData: [" << _data << "]" << std::endl;
-//}
+
+//  PyObject * pArgs;
+  PyObject * pArgs = PyTuple_New(5);
+  PyTuple_SetItem(pArgs, 0, PyInt_FromLong(this->id_robot));
+  PyTuple_SetItem(pArgs, 1, Py_BuildValue("s", _srcAddress.c_str()));
+  PyTuple_SetItem(pArgs, 2, Py_BuildValue("s", _dstAddress.c_str()));
+  PyTuple_SetItem(pArgs, 3, PyInt_FromLong(_dstPort));
+  PyTuple_SetItem(pArgs, 4, Py_BuildValue("s", _data.c_str()));
+
+
+  pOnDataReceivedFunc = PyObject_GetAttrString(pModule, "on_data_received");
+  // Call UPDATE function in python.
+  PyObject_CallObject(pOnDataReceivedFunc, pArgs);
+}

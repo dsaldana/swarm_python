@@ -1,6 +1,9 @@
 import robot
 
 
+def on_data_received(robot_id, src_add, dst_add, port, data):
+    print "received!!!", robot_id, src_add, dst_add, port, data
+
 
 def update(robot_id):
     #print "updating", robot_id
