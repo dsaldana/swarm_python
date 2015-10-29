@@ -174,11 +174,7 @@ robot_bearing(PyObject *self, PyObject *args) {
   tcplugins[robot_id] -> Bearing(bearing);
 
   // Return
-  PyObject * pArgs = PyTuple_New(1);
-  PyTuple_SetItem(pArgs, 0, Py_BuildValue("f", bearing.Radian()));
-
-
-  return pArgs;
+  return Py_BuildValue("f", bearing.Radian());
 }
 
 

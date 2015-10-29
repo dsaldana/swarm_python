@@ -16,7 +16,8 @@ def update(robot_id):
     
     #print robot.neighbors(robot_id)
     #print "pose:", robot_id, robot.pose(robot_id)
-    print "imu:", robot_id, robot.imu(robot_id)
+    #print "imu:", robot_id, robot.imu(robot_id)
+    print "bearing:", robot_id, robot.bearing(robot_id)
     
     #print "search_area:", robot.search_area(robot_id)
     #print "camera",robot_id,":", robot.camera(robot_id)
