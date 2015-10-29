@@ -101,7 +101,7 @@ robot_send_to(PyObject *self, PyObject *args) {
   // Send message
   std::string sdata(data);
   std::string sdest(dest);
-  bool sent = tcplugins[robot_id]->SendTo(sdata,sdest);
+  bool sent = tcplugins[robot_id]->SendTo(sdata, sdest);
 
   return Py_BuildValue("b", sent);
 }
@@ -123,6 +123,59 @@ robot_pose(PyObject *self, PyObject *args) {
   PyTuple_SetItem(pArgs, 0, Py_BuildValue("d", latitude));
   PyTuple_SetItem(pArgs, 1, Py_BuildValue("d", longitude));
   PyTuple_SetItem(pArgs, 2, Py_BuildValue("d", altitude));
+
+
+  return pArgs;
+}
+
+
+/**
+ * Python function for: ask for IMU.
+ */
+static PyObject *
+robot_imu(PyObject *self, PyObject *args) {
+  int robot_id;
+  PyArg_ParseTuple(args, "i", &robot_id);
+
+
+  // Get IMU information.
+  ignition::math::Vector3d linVel, angVel;
+  ignition::math::Quaterniond orient;
+  tcplugins[robot_id]->Imu(linVel, angVel, orient);
+
+  // Return
+  PyObject * pArgs = PyTuple_New(9);
+  PyTuple_SetItem(pArgs, 0, Py_BuildValue("f", linVel.X()));
+  PyTuple_SetItem(pArgs, 1, Py_BuildValue("f", linVel.Y()));
+  PyTuple_SetItem(pArgs, 2, Py_BuildValue("f", linVel.Z()));
+  PyTuple_SetItem(pArgs, 3, Py_BuildValue("f", angVel.X()));
+  PyTuple_SetItem(pArgs, 4, Py_BuildValue("f", angVel.Y()));
+  PyTuple_SetItem(pArgs, 5, Py_BuildValue("f", angVel.Z()));
+  PyTuple_SetItem(pArgs, 6, Py_BuildValue("f", orient.X()));
+  PyTuple_SetItem(pArgs, 7, Py_BuildValue("f", orient.Y()));
+  PyTuple_SetItem(pArgs, 8, Py_BuildValue("f", orient.Z()));
+
+
+  return pArgs;
+}
+
+
+/**
+ * Python function for: ask for IMU.
+ */
+static PyObject *
+robot_bearing(PyObject *self, PyObject *args) {
+  int robot_id;
+  PyArg_ParseTuple(args, "i", &robot_id);
+
+
+  // Get IMU information.
+  ignition::math::Angle bearing;
+  tcplugins[robot_id] -> Bearing(bearing);
+
+  // Return
+  PyObject * pArgs = PyTuple_New(1);
+  PyTuple_SetItem(pArgs, 0, Py_BuildValue("f", bearing.Radian()));
 
 
   return pArgs;
@@ -197,8 +250,10 @@ static PyMethodDef EmbMethods[] = {
         {"send_to",              robot_send_to,              METH_VARARGS, "Send message to."},
         {"neighbors",            robot_neighbors,            METH_VARARGS, "Neighbors."},
         {"pose",                 robot_pose,                 METH_VARARGS, "Robot pose using GPS."},
+        {"imu",                  robot_imu,                  METH_VARARGS, "Robot IMU."},
+        {"bearing",              robot_bearing,              METH_VARARGS, "Robot bearing."},
         {"search_area",          robot_search_area,          METH_VARARGS, "Search area for GPS."},
-        {"camera",               robot_camera,               METH_VARARGS, "Search area for GPS."},
+        {"camera",               robot_camera,               METH_VARARGS, "Logic camera."},
         {NULL, NULL, 0, NULL}
 };
 
@@ -281,12 +336,10 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
 }
 
 
-
 ////////////////////////////////////////////////////
 void TeamControllerPlugin::OnDataReceived(const std::string &_srcAddress,
                                           const std::string &_dstAddress, const uint32_t _dstPort,
-                                          const std::string &_data)
-{
+                                          const std::string &_data) {
   // Received arguments
   PyObject * pArgs = PyTuple_New(5);
   PyTuple_SetItem(pArgs, 0, PyInt_FromLong(this->id_robot));
