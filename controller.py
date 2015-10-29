@@ -2,7 +2,8 @@ import robot
 
 
 def on_data_received(robot_id, src_add, dst_add, port, data):
-    print "received!!!", robot_id, src_add, dst_add, port, data
+    #print "received!!!", robot_id, src_add, dst_add, port, data
+    pass
 
 
 def update(robot_id):
@@ -16,5 +17,6 @@ def update(robot_id):
     #print "camera",robot_id,":", robot.camera(robot_id)
     
     for neigh in robot.neighbors(robot_id):
-        print "->", neigh, robot.send_to(robot_id, "hi ", neigh)
-    print "-------"
+        #print "->", neigh, robot.send_to(robot_id, "hi ", neigh)
+        robot.send_to(robot_id, "hi ", neigh)
+    #print "-------"

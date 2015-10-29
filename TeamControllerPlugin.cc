@@ -189,7 +189,7 @@ robot_camera(PyObject *self, PyObject *args) {
 
 
 /**
- * Python methods.
+ * Python methods to call c++.
  */
 static PyMethodDef EmbMethods[] = {
         {"set_linear_velocity",  robot_set_linear_velocity,  METH_VARARGS, "Linear velocity."},
@@ -221,10 +221,9 @@ TeamControllerPlugin::TeamControllerPlugin()
 
 //////////////////////////////////////////////////
 void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
-  // Initialize python interpreter
+  //////////////////// Python interpreter ////////////////
   Py_Initialize();
 
-  /////
   Py_InitModule("robot", EmbMethods);
 
   //// add the current folder to the workspace
@@ -239,6 +238,18 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
   Py_DECREF(pName);
 
 
+  // Error if there is no python script
+  if (pModule == NULL) {
+    PyErr_Print();
+    return;
+  }
+
+  //////////////////// Python functions //////////////////////////////////
+  // Python update function.
+  pUpdateFunc = PyObject_GetAttrString(pModule, "update");
+  // todo validate pUpdateFunc is callable
+  // On data received function.
+  pOnDataReceivedFunc = PyObject_GetAttrString(pModule, "on_data_received");
 
 
   ////////////////////////// Communication ////////////////////////////
@@ -249,28 +260,16 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
     return;
   }
 
-//  this->numMessageToSend = _sdf->Get<int>("num_messages");
-
   // Bind on my local address and default port.
   this->Bind(&TeamControllerPlugin::OnDataReceived, this, this->Host());
 
   // Bind on the multicast group and default port.
   this->Bind(&TeamControllerPlugin::OnDataReceived, this, this->kMulticast);
+
 }
 
 //////////////////////////////////////////////////
 void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
-
-  // Error if there is no python script
-  if (pModule == NULL) {
-    PyErr_Print();
-    return;
-  }
-
-  // Obtain function update
-  pUpdateFunc = PyObject_GetAttrString(pModule, "update");
-  // todo validate pUpdateFunc is callable
-
 
   // Robot id as argument
   PyObject * pArgs;
@@ -279,7 +278,6 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
 
   // Call UPDATE function in python.
   PyObject_CallObject(pUpdateFunc, pArgs);
-
 }
 
 
@@ -289,13 +287,7 @@ void TeamControllerPlugin::OnDataReceived(const std::string &_srcAddress,
                                           const std::string &_dstAddress, const uint32_t _dstPort,
                                           const std::string &_data)
 {
-//  gzmsg << "---" << std::endl;
-//  gzmsg << "[" << this->Host() << "] New message received" << std::endl;
-//  gzmsg << "\tFrom: [" << _srcAddress << "]" << std::endl;
-//  gzmsg << "\tTo: [" << _dstAddress << ":" << _dstPort << "]" << std::endl;
-//  gzmsg << "\tData: [" << _data << "]" << std::endl;
-
-//  PyObject * pArgs;
+  // Received arguments
   PyObject * pArgs = PyTuple_New(5);
   PyTuple_SetItem(pArgs, 0, PyInt_FromLong(this->id_robot));
   PyTuple_SetItem(pArgs, 1, Py_BuildValue("s", _srcAddress.c_str()));
@@ -304,7 +296,7 @@ void TeamControllerPlugin::OnDataReceived(const std::string &_srcAddress,
   PyTuple_SetItem(pArgs, 4, Py_BuildValue("s", _data.c_str()));
 
 
-  pOnDataReceivedFunc = PyObject_GetAttrString(pModule, "on_data_received");
+
   // Call UPDATE function in python.
   PyObject_CallObject(pOnDataReceivedFunc, pArgs);
 }
