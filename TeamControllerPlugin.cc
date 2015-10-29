@@ -87,6 +87,25 @@ robot_neighbors(PyObject *self, PyObject *args) {
   return pArgs;
 }
 
+/**
+ * Python function for: ask for Neighbors.
+ */
+static PyObject *
+robot_send_to(PyObject *self, PyObject *args) {
+  int robot_id;
+  char *data, *dest;
+
+  // Get argunments
+  PyArg_ParseTuple(args, "iss", &robot_id, &data, &dest);
+
+  // Send message
+  std::string sdata(dest);
+  std::string sdest(dest);
+  bool sent = tcplugins[robot_id]->SendTo(sdata,sdest);
+
+  return Py_BuildValue("b", sent);
+}
+
 
 /**
  * Python function for: ask for GPS localization.
@@ -175,6 +194,7 @@ robot_camera(PyObject *self, PyObject *args) {
 static PyMethodDef EmbMethods[] = {
         {"set_linear_velocity",  robot_set_linear_velocity,  METH_VARARGS, "Linear velocity."},
         {"set_angular_velocity", robot_set_angular_velocity, METH_VARARGS, "Angular velocity."},
+        {"send_to",              robot_send_to,              METH_VARARGS, "Send message to."},
         {"neighbors",            robot_neighbors,            METH_VARARGS, "Neighbors."},
         {"pose",                 robot_pose,                 METH_VARARGS, "Robot pose using GPS."},
         {"search_area",          robot_search_area,          METH_VARARGS, "Search area for GPS."},
@@ -217,6 +237,26 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
   pName = PyString_FromString("controller");
   pModule = PyImport_Import(pName);
   Py_DECREF(pName);
+
+
+
+
+  ////////////////////////// Communication ////////////////////////////
+  // Read the <num_messages> SDF parameter.
+//  if (!_sdf->HasElement("num_messages"))
+//  {
+//    gzerr << "TeamControllerPlugin::Load(): Unable to find the <num_messages> "
+//    << "parameter" << std::endl;
+//    return;
+//  }
+//
+////  this->numMessageToSend = _sdf->Get<int>("num_messages");
+//
+//  // Bind on my local address and default port.
+//  this->Bind(&TeamControllerPlugin::OnDataReceived, this, this->Host());
+//
+//  // Bind on the multicast group and default port.
+//  this->Bind(&TeamControllerPlugin::OnDataReceived, this, this->kMulticast);
 }
 
 //////////////////////////////////////////////////
@@ -249,6 +289,18 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
 //  }
 
 //  printf("--------------");
-
-
 }
+
+
+
+////////////////////////////////////////////////////
+//void TeamControllerPlugin::OnDataReceived(const std::string &_srcAddress,
+//                                          const std::string &_dstAddress, const uint32_t _dstPort,
+//                                          const std::string &_data)
+//{
+//  gzmsg << "---" << std::endl;
+//  gzmsg << "[" << this->Host() << "] New message received" << std::endl;
+//  gzmsg << "\tFrom: [" << _srcAddress << "]" << std::endl;
+//  gzmsg << "\tTo: [" << _dstAddress << ":" << _dstPort << "]" << std::endl;
+//  gzmsg << "\tData: [" << _data << "]" << std::endl;
+//}
