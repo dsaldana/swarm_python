@@ -88,7 +88,7 @@ robot_neighbors(PyObject *self, PyObject *args) {
 }
 
 /**
- * Python function for: ask for Neighbors.
+ * Python function for: ask for sending.
  */
 static PyObject *
 robot_send_to(PyObject *self, PyObject *args) {
