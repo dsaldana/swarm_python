@@ -19,6 +19,9 @@
 #include <gazebo/common/Console.hh>
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/common/UpdateInfo.hh>
+
+#include "gazebo/physics/PhysicsTypes.hh"
+#include "gazebo/physics/Model.hh"
 #include <sdf/sdf.hh>
 #include "TeamControllerPlugin.hh"
 
@@ -74,10 +77,10 @@ robot_neighbors(PyObject *self, PyObject *args) {
   // Send to the right controller.
   const std::vector<std::string> &neighbors = tcplugins[robot_id]->Neighbors();
 
-  PyObject * pArgs = PyTuple_New(neighbors.size());
+  PyObject *pArgs = PyTuple_New(neighbors.size());
 
   for (int i = 0; i < neighbors.size(); ++i) {
-    PyObject * pValue = Py_BuildValue("s", neighbors.at(i).c_str());
+    PyObject *pValue = Py_BuildValue("s", neighbors.at(i).c_str());
 
     /* pValue reference stolen here: */
     PyTuple_SetItem(pArgs, i, pValue);
@@ -119,7 +122,7 @@ robot_pose(PyObject *self, PyObject *args) {
   double latitude, longitude, altitude;
   tcplugins[robot_id]->Pose(latitude, longitude, altitude);
 
-  PyObject * pArgs = PyTuple_New(3);
+  PyObject *pArgs = PyTuple_New(3);
   PyTuple_SetItem(pArgs, 0, Py_BuildValue("d", latitude));
   PyTuple_SetItem(pArgs, 1, Py_BuildValue("d", longitude));
   PyTuple_SetItem(pArgs, 2, Py_BuildValue("d", altitude));
@@ -128,6 +131,39 @@ robot_pose(PyObject *self, PyObject *args) {
   return pArgs;
 }
 
+/**
+ * Python function for: ask for GPS localization.
+ */
+static PyObject *
+robot_gazebo_pose(PyObject *self, PyObject *args) {
+  int robot_id;
+  PyArg_ParseTuple(args, "i", &robot_id);
+
+  //FIXME Do it generic for any model.
+  std::string aa = "rotor_" + std::to_string(robot_id);
+
+  gazebo::physics::ModelPtr gazebo_model = gazebo::physics::get_world()->GetModel(aa);
+  double rx = gazebo_model->GetWorldPose().pos.x;
+  double ry = gazebo_model->GetWorldPose().pos.y;
+  double rz = gazebo_model->GetWorldPose().pos.z;
+//
+//
+  double rrx = gazebo_model->GetWorldPose().rot.GetAsEuler().x;
+  double rry = gazebo_model->GetWorldPose().rot.GetAsEuler().y;
+  double rrz = gazebo_model->GetWorldPose().rot.GetAsEuler().z;
+//
+//
+  PyObject *pArgs = PyTuple_New(6);
+  PyTuple_SetItem(pArgs, 0, Py_BuildValue("d", rx));
+  PyTuple_SetItem(pArgs, 1, Py_BuildValue("d", ry));
+  PyTuple_SetItem(pArgs, 2, Py_BuildValue("d", rz));
+  PyTuple_SetItem(pArgs, 3, Py_BuildValue("d", rrx));
+  PyTuple_SetItem(pArgs, 4, Py_BuildValue("d", rry));
+  PyTuple_SetItem(pArgs, 5, Py_BuildValue("d", rrz));
+
+
+  return pArgs;
+}
 
 /**
  * Python function for: ask for IMU.
@@ -144,7 +180,7 @@ robot_imu(PyObject *self, PyObject *args) {
   tcplugins[robot_id]->Imu(linVel, angVel, orient);
 
   // Return
-  PyObject * pArgs = PyTuple_New(9);
+  PyObject *pArgs = PyTuple_New(9);
   PyTuple_SetItem(pArgs, 0, Py_BuildValue("f", linVel.X()));
   PyTuple_SetItem(pArgs, 1, Py_BuildValue("f", linVel.Y()));
   PyTuple_SetItem(pArgs, 2, Py_BuildValue("f", linVel.Z()));
@@ -171,7 +207,7 @@ robot_bearing(PyObject *self, PyObject *args) {
 
   // Get IMU information.
   ignition::math::Angle bearing;
-  tcplugins[robot_id] -> Bearing(bearing);
+  tcplugins[robot_id]->Bearing(bearing);
 
   // Return
   return Py_BuildValue("f", bearing.Radian());
@@ -190,7 +226,7 @@ robot_search_area(PyObject *self, PyObject *args) {
   double minLatitude, maxLatitude, minLongitude, maxLongitude;
   tcplugins[robot_id]->SearchArea(minLatitude, maxLatitude, minLongitude, maxLongitude);
 
-  PyObject * pArgs = PyTuple_New(4);
+  PyObject *pArgs = PyTuple_New(4);
   PyTuple_SetItem(pArgs, 0, Py_BuildValue("d", minLatitude));
   PyTuple_SetItem(pArgs, 1, Py_BuildValue("d", maxLatitude));
   PyTuple_SetItem(pArgs, 2, Py_BuildValue("d", minLongitude));
@@ -211,10 +247,10 @@ robot_camera(PyObject *self, PyObject *args) {
   // Get the camera information
   ImageData img;
   if (tcplugins[robot_id]->Image(img)) {
-    PyObject * camera_locs = PyTuple_New(img.objects.size());
+    PyObject *camera_locs = PyTuple_New(img.objects.size());
     int i = 0;
     for (auto const obj : img.objects) {
-      PyObject * camera_obj = PyTuple_New(1);
+      PyObject *camera_obj = PyTuple_New(1);
       PyTuple_SetItem(camera_obj, 0, Py_BuildValue("s", obj.first.c_str()));
       // TODO obtain pose
       double x, y, z, p, r, ya;
@@ -250,6 +286,7 @@ static PyMethodDef EmbMethods[] = {
         {"bearing",              robot_bearing,              METH_VARARGS, "Robot bearing."},
         {"search_area",          robot_search_area,          METH_VARARGS, "Search area for GPS."},
         {"camera",               robot_camera,               METH_VARARGS, "Logic camera."},
+        {"gazebo_pose",          robot_gazebo_pose,          METH_VARARGS, "Get pose from gazebo."},
         {NULL, NULL, 0, NULL}
 };
 
@@ -323,12 +360,17 @@ void TeamControllerPlugin::Load(sdf::ElementPtr _sdf) {
 void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
 
   // Robot id as argument
-  PyObject * pArgs;
+  PyObject *pArgs;
   pArgs = PyTuple_New(1);
   PyTuple_SetItem(pArgs, 0, PyInt_FromLong(this->id_robot));
 
   // Call UPDATE function in python.
   PyObject_CallObject(pUpdateFunc, pArgs);
+
+
+  //gazebo::physics::ModelPtr model = gazebo::physics::get_world()->GetModel("rotor_"+ id_robot);
+  //double rx, ry, rz, rp, rr, rya;
+  ///printf("%d x=%f, y=%f, z=%f\n", id_robot, model->GetWorldPose().pos.x, model->GetWorldPose().pos.y, model->GetWorldPose().pos.z);
 }
 
 
@@ -337,7 +379,7 @@ void TeamControllerPlugin::OnDataReceived(const std::string &_srcAddress,
                                           const std::string &_dstAddress, const uint32_t _dstPort,
                                           const std::string &_data) {
   // Received arguments
-  PyObject * pArgs = PyTuple_New(5);
+  PyObject *pArgs = PyTuple_New(5);
   PyTuple_SetItem(pArgs, 0, PyInt_FromLong(this->id_robot));
   PyTuple_SetItem(pArgs, 1, Py_BuildValue("s", _srcAddress.c_str()));
   PyTuple_SetItem(pArgs, 2, Py_BuildValue("s", _dstAddress.c_str()));

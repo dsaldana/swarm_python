@@ -3,10 +3,11 @@
 Main instructions about how to build the project in [https://bitbucket.org/osrf/swarm/wiki/Tutorial_1-How_to_create_your_Swarm_controller]:
 
 ## Requirements
-Install the Swarm simulator from:
+
+Download and Install the Swarm simulator from:
 https://bitbucket.org/osrf/swarm/wiki/Install.md
 
-Before compiling, open the file **TeamControllerPlugin.hh** and replace the keyword
+Before compiling, open the file **RobotPlugin.hh** and replace the keyword
 **protected** for **public**.
 
 ## Install the C++ bridge for Python
