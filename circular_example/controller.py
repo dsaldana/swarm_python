@@ -9,13 +9,9 @@ import sys
 
 from params import *
 
-
-
 inbox = {}
 
-
-
-
+# Phi value for each robot at time t-1.
 old_phi = np.zeros(n)
 
 
@@ -23,6 +19,7 @@ def on_data_received(robot_id, src_add, dst_add, port, data):
     global inbox
     # global n
     # n = len(inbox)
+    # print "robots:", n
     # print "new data"
     if robot_id not in inbox:
         inbox[robot_id] = {}
@@ -96,13 +93,16 @@ def update(robot_id):
             print rho
 
 
-        # Feedback linearization. Equation (12)
-        # d = .2
-        # v = wx * math.cos(rtheta) + wy * math.sin(rtheta)
-        # ang = - wx * math.sin(rtheta) / d + wy * math.cos(rtheta) / d
 
-        robot.set_linear_velocity(robot_id, dot_x, dot_y, 0)
-        # robot.set_angular_velocity(robot_id, 0, 0, ang)
+        # Feedback linearization
+        d = 1.1
+        vi = dot_x * math.cos(rrz) + dot_y * math.sin(rrz)
+        wi = - dot_x * math.sin(rrz) / d + dot_y * math.cos(rrz) / d
+
+
+
+        robot.set_linear_velocity(robot_id, vi, 0, 0)
+        robot.set_angular_velocity(robot_id, 0, 0, wi)
 
     except:
         print "Unexpected error:", sys.exc_info()[0]

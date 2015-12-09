@@ -38,6 +38,10 @@ PyObject *pName, *pModule, *pDict, *pUpdateFunc, *pOnDataReceivedFunc;
 TeamControllerPlugin *tcplugins[1000];
 
 
+// For localization MODEL Type
+//static const char *const MODEL_TYPE = "rotor_";
+static const char *const MODEL_TYPE = "ground_";
+
 /**
  * Python function for: Set linear velocity
  */
@@ -140,7 +144,7 @@ robot_gazebo_pose(PyObject *self, PyObject *args) {
   PyArg_ParseTuple(args, "i", &robot_id);
 
   //FIXME Do it generic for any model.
-  std::string aa = "rotor_" + std::to_string(robot_id);
+  std::string aa = MODEL_TYPE + std::to_string(robot_id);
 
   gazebo::physics::ModelPtr gazebo_model = gazebo::physics::get_world()->GetModel(aa);
   double rx = gazebo_model->GetWorldPose().pos.x;
@@ -366,11 +370,6 @@ void TeamControllerPlugin::Update(const gazebo::common::UpdateInfo &_info) {
 
   // Call UPDATE function in python.
   PyObject_CallObject(pUpdateFunc, pArgs);
-
-
-  //gazebo::physics::ModelPtr model = gazebo::physics::get_world()->GetModel("rotor_"+ id_robot);
-  //double rx, ry, rz, rp, rr, rya;
-  ///printf("%d x=%f, y=%f, z=%f\n", id_robot, model->GetWorldPose().pos.x, model->GetWorldPose().pos.y, model->GetWorldPose().pos.z);
 }
 
 
