@@ -6,8 +6,9 @@ import math
 # gain constants
 import sys
 
-
 from params import *
+
+IP_FORMAT = "192.168.1.%d"
 
 inbox = {}
 
@@ -55,25 +56,38 @@ def update(robot_id):
 
         ############# Send location to the neighbors ##############
         # Next in ring
-        next = "192.168.1.%d" % ((robot_id + 1) % n + 1)
-        robot.send_to(robot_id, str(phi), next)
-        # Before in ring
-        before = "192.168.1.%d" % ((robot_id - 1) % n + 1)
-        robot.send_to(robot_id, str(phi), before)
+        next = (robot_id + 1) % n
+        next_ip = IP_FORMAT % ((robot_id + 2) % (n + 1)) if (robot_id + 2) % (n + 1) != 0 else  IP_FORMAT % 1
+        # robot.send_to(robot_id, str(phi), next_ip)
+        # # Before in ring
+        before = (robot_id - 1) % n
+        # before_ip = IP_FORMAT % (robot_id % (n + 1))
+        before_ip = IP_FORMAT % (robot_id % (n + 1)) if robot_id != 0 else  IP_FORMAT % n
+
+        # robot.send_to(robot_id, str(phi), before_ip)
+        robot_ip = IP_FORMAT % ((robot_id + 1) % (n + 1))
+        on_data_received(next, robot_ip, next_ip, 55, str(phi))
+        on_data_received(before, robot_ip, before_ip, 55, str(phi))
+
+        # print robot_id, inbox
 
         # No inbox
         if robot_id not in inbox:
             print "Warning: no inbox for", robot_id
             return
-        if before not in inbox[robot_id] or next not in inbox[robot_id]:
-            print "Warning: no data from neighbors for", robot_id
+        if before_ip not in inbox[robot_id] or next_ip not in inbox[robot_id]:
+            print "Warning: no data from neighbors for", robot_id, "neighbours:", inbox[robot_id], (before_ip, next_ip)
+            return
+
+        if inbox[robot_id][before_ip] is None or inbox[robot_id][next_ip] is None:
+            print "Warning: missed neighbor for", robot_id
             return
 
 
         ############### Controller ##############
         # Average Phi from neighbors
-        back1 = float(inbox[robot_id][before])
-        front1 = float(inbox[robot_id][next])
+        back1 = float(inbox[robot_id][before_ip])
+        front1 = float(inbox[robot_id][next_ip])
         phi_av = (back1 + front1) / 2.
 
         if robot_id == 0:
@@ -95,15 +109,18 @@ def update(robot_id):
 
 
         # Feedback linearization
-        d = 1.1
+        d = .1
         vi = dot_x * math.cos(rrz) + dot_y * math.sin(rrz)
         wi = - dot_x * math.sin(rrz) / d + dot_y * math.cos(rrz) / d
-
-
 
         robot.set_linear_velocity(robot_id, vi, 0, 0)
         robot.set_angular_velocity(robot_id, 0, 0, wi)
 
+
+        ### Clear inbox
+        # inbox[robot_id][before_ip] = None
+        # inbox[robot_id][next_ip] = None
+
     except:
-        print "Unexpected error:", sys.exc_info()[0]
+        print "Unexpected error:", sys.exc_info()
         raise
