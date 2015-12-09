@@ -6,16 +6,14 @@ import math
 # gain constants
 import sys
 
-kp, kphi = 1.5, .3
 
-# Desired radius
-R = 4.
-# Desired angular speed
-Omeg = 0.5
+from params import *
+
+
 
 inbox = {}
 
-n = 36
+
 
 
 old_phi = np.zeros(n)
