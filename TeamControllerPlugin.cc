@@ -278,6 +278,54 @@ robot_camera(PyObject *self, PyObject *args) {
 
 
 /**
+ * Python function for: print gazebo logging messages.
+ */
+static PyObject *
+robot_gzmsg(PyObject *self, PyObject *args) {
+  int robot_id;
+  char *message;
+
+  // Get arguments
+  PyArg_ParseTuple(args, "is", &robot_id, &message);
+
+  // Print
+  gzmsg << message << "\n";
+  return Py_BuildValue("i", -1);
+}
+
+/**
+ * Python function for: print gazebo logging messages.
+ */
+static PyObject *
+robot_gzerr(PyObject *self, PyObject *args) {
+  int robot_id;
+  char *message;
+
+  // Get arguments
+  PyArg_ParseTuple(args, "is", &robot_id, &message);
+
+  // Print
+  gzerr << message << "\n";
+  return Py_BuildValue("i", -1);
+}
+
+/**
+ * Python function for: print gazebo logging messages.
+ */
+static PyObject *
+robot_gzlog(PyObject *self, PyObject *args) {
+  int robot_id;
+  char *message;
+
+  // Get arguments
+  PyArg_ParseTuple(args, "is", &robot_id, &message);
+
+  // Print
+  gzlog << message << "\n";
+  return Py_BuildValue("i", -1);
+}
+
+/**
  * Python methods to call c++.
  */
 static PyMethodDef EmbMethods[] = {
@@ -291,6 +339,9 @@ static PyMethodDef EmbMethods[] = {
         {"search_area",          robot_search_area,          METH_VARARGS, "Search area for GPS."},
         {"camera",               robot_camera,               METH_VARARGS, "Logic camera."},
         {"gazebo_pose",          robot_gazebo_pose,          METH_VARARGS, "Get pose from gazebo."},
+        {"gzmsg",                robot_gzmsg,                METH_VARARGS, "Print gazebo message."},
+        {"gzerr",                robot_gzerr,                METH_VARARGS, "Print gazebo error."},
+        {"gzlog",                robot_gzlog,                METH_VARARGS, "Gazebo log."},
         {NULL, NULL, 0, NULL}
 };
 
@@ -384,7 +435,6 @@ void TeamControllerPlugin::OnDataReceived(const std::string &_srcAddress,
   PyTuple_SetItem(pArgs, 2, Py_BuildValue("s", _dstAddress.c_str()));
   PyTuple_SetItem(pArgs, 3, PyInt_FromLong(_dstPort));
   PyTuple_SetItem(pArgs, 4, Py_BuildValue("s", _data.c_str()));
-
 
 
   // Call UPDATE function in python.

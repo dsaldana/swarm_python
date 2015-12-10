@@ -37,3 +37,9 @@ Run an example in the same folder where the script **controller.py** is located:
     cd ..
     gazebo --verbose worlds/ground_simple_2.world
 
+
+
+
+
+
+~/swarmsu/swarm_python/circular_example
