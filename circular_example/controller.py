@@ -62,16 +62,15 @@ def update(robot_id):
         # Next in ring
         next = (robot_id + 1) % n
         next_ip = IP_FORMAT % ((robot_id + 2) % (n + 1)) if (robot_id + 2) % (n + 1) != 0 else  IP_FORMAT % 1
-        # robot.send_to(robot_id, str(phi), next_ip)
+        robot.send_to(robot_id, str(phi), next_ip)
         # # Before in ring
         before = (robot_id - 1) % n
-        # before_ip = IP_FORMAT % (robot_id % (n + 1))
         before_ip = IP_FORMAT % (robot_id % (n + 1)) if robot_id != 0 else  IP_FORMAT % n
+        robot.send_to(robot_id, str(phi), before_ip)
 
-        # robot.send_to(robot_id, str(phi), before_ip)
-        robot_ip = IP_FORMAT % ((robot_id + 1) % (n + 1))
-        on_data_received(next, robot_ip, next_ip, 55, str(phi))
-        on_data_received(before, robot_ip, before_ip, 55, str(phi))
+        # robot_ip = IP_FORMAT % ((robot_id + 1) % (n + 1))
+        # on_data_received(next, robot_ip, next_ip, 55, str(phi))
+        # on_data_received(before, robot_ip, before_ip, 55, str(phi))
 
         # print robot_id, inbox
 

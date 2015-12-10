@@ -3,12 +3,10 @@
 
 
 # Number of Robots
-n = 10
-# n = 100
+n = 100
 
 # Desired radius
-R = 15.
-R = 200
+R = 100
 # Desired angular speed
 Omeg = 0.5
 
