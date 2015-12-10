@@ -20,8 +20,6 @@ def on_data_received(robot_id, src_add, dst_add, port, data):
     global inbox
     # global n
     # n = len(inbox)
-    # print "robots:", n
-    # print "new data"
     if robot_id not in inbox:
         inbox[robot_id] = {}
     if src_add not in inbox[robot_id]:
@@ -34,7 +32,6 @@ def update(robot_id):
     try:
         global old_phi
         ########## Get pose #####################
-        # print robot_id, "1"
         rx, ry, rz, rrx, rry, rrz = robot.gazebo_pose(robot_id)
 
         rho = math.sqrt(rx ** 2 + ry ** 2)
@@ -44,7 +41,6 @@ def update(robot_id):
         angle_distance = lambda phi1, phi2: math.atan2(math.sin(phi1 - phi2), math.cos(phi1 - phi2))
 
         # delta phi
-        # dphi = math.atan2(math.sin(phi - old_phi[robot_id]), math.cos(phi - old_phi[robot_id]))
         dphi = angle_distance(phi, old_phi[robot_id])
         phi = old_phi[robot_id] + dphi
         old_phi[robot_id] = phi
@@ -62,15 +58,15 @@ def update(robot_id):
         # Next in ring
         next = (robot_id + 1) % n
         next_ip = IP_FORMAT % ((robot_id + 2) % (n + 1)) if (robot_id + 2) % (n + 1) != 0 else  IP_FORMAT % 1
-        robot.send_to(robot_id, str(phi), next_ip)
+        # robot.send_to(robot_id, str(phi), next_ip)
         # # Before in ring
         before = (robot_id - 1) % n
         before_ip = IP_FORMAT % (robot_id % (n + 1)) if robot_id != 0 else  IP_FORMAT % n
-        robot.send_to(robot_id, str(phi), before_ip)
+        # robot.send_to(robot_id, str(phi), before_ip)
 
-        # robot_ip = IP_FORMAT % ((robot_id + 1) % (n + 1))
-        # on_data_received(next, robot_ip, next_ip, 55, str(phi))
-        # on_data_received(before, robot_ip, before_ip, 55, str(phi))
+        robot_ip = IP_FORMAT % ((robot_id + 1) % (n + 1))
+        on_data_received(next, robot_ip, next_ip, 55, str(phi))
+        on_data_received(before, robot_ip, before_ip, 55, str(phi))
 
         # print robot_id, inbox
 
@@ -101,12 +97,18 @@ def update(robot_id):
         # Control input
         dot_rho = kp * (R - rho)
         dot_phi = Omeg + kphi * (phi_av - phi)
+        dot_alt = ka * (A - rz)
+
         # dot_phi = Omeg + kphi * angle_distance(phi_av, phi)
-        print robot_id, angle_distance(phi_av, phi), (phi_av - phi), (phi_av, phi)
+        # print robot_id, angle_distance(phi_av, phi), (phi_av - phi), (phi_av, phi)
         # Convert to cartesian coordinates
         dot_x = dot_rho * math.cos(phi) - rho * dot_phi * math.sin(phi)
         dot_y = dot_rho * math.sin(phi) + rho * dot_phi * math.cos(phi)
 
+        # robot.set_linear_velocity(robot_id, dot_x, dot_y, dot_alt)
+
+
+        # Print metric
         if robot_id == 1:
             target_phi = 2 * math.pi / n
             metrics = [(angle_distance(old_phi[i], old_phi[i - 1]) - target_phi) ** 2 for i in range(len(old_phi))]
@@ -122,11 +124,6 @@ def update(robot_id):
 
         robot.set_linear_velocity(robot_id, vi, 0, 0)
         robot.set_angular_velocity(robot_id, 0, 0, wi)
-
-
-        ### Clear inbox
-        # inbox[robot_id][before_ip] = None
-        # inbox[robot_id][next_ip] = None
 
     except:
         print "Unexpected error:", sys.exc_info()
