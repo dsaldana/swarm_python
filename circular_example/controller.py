@@ -40,8 +40,12 @@ def update(robot_id):
         rho = math.sqrt(rx ** 2 + ry ** 2)
         phi = math.atan2(ry, rx)
 
+        # Distance between two angles
+        angle_distance = lambda phi1, phi2: math.atan2(math.sin(phi1 - phi2), math.cos(phi1 - phi2))
+
         # delta phi
-        dphi = math.atan2(math.sin(phi - old_phi[robot_id]), math.cos(phi - old_phi[robot_id]))
+        # dphi = math.atan2(math.sin(phi - old_phi[robot_id]), math.cos(phi - old_phi[robot_id]))
+        dphi = angle_distance(phi, old_phi[robot_id])
         phi = old_phi[robot_id] + dphi
         old_phi[robot_id] = phi
 
@@ -103,9 +107,14 @@ def update(robot_id):
         dot_x = dot_rho * math.cos(phi) - rho * dot_phi * math.sin(phi)
         dot_y = dot_rho * math.sin(phi) + rho * dot_phi * math.cos(phi)
 
-        if robot_id == 3:
-            print rho
-
+        if robot_id == 1:
+            # print rho
+            # robot.gzmsg(robot_id, "oh oh")
+            target_phi = 2 * math.pi / n
+            metrics = [(angle_distance(old_phi[i], old_phi[i - 1]) - target_phi) ** 2 for i in range(len(old_phi))]
+            total_metric = sum(metrics)
+            #
+            robot.gzmsg(robot_id, "metric: %f" % total_metric)
 
 
         # Feedback linearization

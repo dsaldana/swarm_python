@@ -4,7 +4,7 @@
 
 # Number of Robots
 n = 10
-n = 100
+# n = 100
 
 # Desired radius
 R = 15.
