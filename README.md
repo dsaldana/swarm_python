@@ -10,6 +10,18 @@ https://bitbucket.org/osrf/swarm/wiki/Install.md
 Before compiling, open the file **RobotPlugin.hh** and replace the keyword
 **protected** for **public**.
 
+## Add a new world
+
+1. Copy the file **worlds/ground_simple_10.world.erb** to swarm/worlds.
+2. Modify the file swarm/worlds/CMakeLists.txt to add the line:
+
+
+    set (world_erb_files       
+      ground_simple_10.world.erb
+      
+2. Compile swarm.
+
+
 ## Install the C++ bridge for Python
 Get this project
 
@@ -39,7 +51,12 @@ Run an example in the same folder where the script **controller.py** is located:
 
 
 
+## Run encirclement example
+Run the encirclement example for a world with 10 robots:
+    
+    cd swarm_python/circular_example
+    gazebo worlds/ground_simple_10.world --verbose
+    
+    
 
 
-
-~/swarmsu/swarm_python/circular_example

@@ -101,14 +101,13 @@ def update(robot_id):
         # Control input
         dot_rho = kp * (R - rho)
         dot_phi = Omeg + kphi * (phi_av - phi)
-
+        # dot_phi = Omeg + kphi * angle_distance(phi_av, phi)
+        print robot_id, angle_distance(phi_av, phi), (phi_av - phi), (phi_av, phi)
         # Convert to cartesian coordinates
         dot_x = dot_rho * math.cos(phi) - rho * dot_phi * math.sin(phi)
         dot_y = dot_rho * math.sin(phi) + rho * dot_phi * math.cos(phi)
 
         if robot_id == 1:
-            # print rho
-            # robot.gzmsg(robot_id, "oh oh")
             target_phi = 2 * math.pi / n
             metrics = [(angle_distance(old_phi[i], old_phi[i - 1]) - target_phi) ** 2 for i in range(len(old_phi))]
             total_metric = sum(metrics)

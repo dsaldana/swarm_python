@@ -39,8 +39,8 @@ TeamControllerPlugin *tcplugins[1000];
 
 
 // For localization MODEL Type
-//static const char *const MODEL_TYPE = "rotor_";
-static const char *const MODEL_TYPE = "ground_";
+static const char *const MODEL_TYPE = "rotor_";
+//static const char *const MODEL_TYPE = "ground_";
 
 /**
  * Python function for: Set linear velocity
