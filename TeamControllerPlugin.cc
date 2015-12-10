@@ -151,6 +151,10 @@ robot_gazebo_pose(PyObject *self, PyObject *args) {
       model_type = "rotor_";
       break;
     }
+    case  RobotPlugin::VehicleType::FIXED_WING: {   //ROTOR
+      model_type = "fixed_wing_";
+      break;
+    }
     default: {
       gzerr << "Unknown vehicle type[" << tcplugins[robot_id]->Type() << "]\n";
       break;
