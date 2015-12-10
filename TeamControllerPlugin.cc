@@ -38,10 +38,6 @@ PyObject *pName, *pModule, *pDict, *pUpdateFunc, *pOnDataReceivedFunc;
 TeamControllerPlugin *tcplugins[1000];
 
 
-// For localization MODEL Type
-static const char *const MODEL_TYPE = "rotor_";
-//static const char *const MODEL_TYPE = "ground_";
-
 /**
  * Python function for: Set linear velocity
  */
@@ -143,10 +139,28 @@ robot_gazebo_pose(PyObject *self, PyObject *args) {
   int robot_id;
   PyArg_ParseTuple(args, "i", &robot_id);
 
-  //FIXME Do it generic for any model.
-  std::string aa = MODEL_TYPE + std::to_string(robot_id);
+  // For localization MODEL Type
+  std::string model_type = "rotor_";
 
-  gazebo::physics::ModelPtr gazebo_model = gazebo::physics::get_world()->GetModel(aa);
+  switch (tcplugins[robot_id]->Type()) {
+    case RobotPlugin::VehicleType::GROUND: {  // GROUND
+      model_type = "ground_";
+      break;
+    }
+    case  RobotPlugin::VehicleType::ROTOR: {   //ROTOR
+      model_type = "rotor_";
+      break;
+    }
+    default: {
+      gzerr << "Unknown vehicle type[" << tcplugins[robot_id]->Type() << "]\n";
+      break;
+    }
+  };
+
+
+  std::string model_id = model_type + std::to_string(robot_id);
+
+  gazebo::physics::ModelPtr gazebo_model = gazebo::physics::get_world()->GetModel(model_id);
   double rx = gazebo_model->GetWorldPose().pos.x;
   double ry = gazebo_model->GetWorldPose().pos.y;
   double rz = gazebo_model->GetWorldPose().pos.z;
