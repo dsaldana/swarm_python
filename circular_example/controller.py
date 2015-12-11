@@ -13,7 +13,8 @@ IP_FORMAT = "192.168.1.%d"
 inbox = {}
 
 # Phi value for each robot at time t-1.
-old_phi = np.zeros(n)
+# old_phi = 2 * math.pi * np.ones(n)
+old_phi = np.linspace(0, 2 * math.pi, n, endpoint=False)
 
 
 def on_data_received(robot_id, src_add, dst_add, port, data):
@@ -42,6 +43,9 @@ def update(robot_id):
 
         # delta phi
         dphi = angle_distance(phi, old_phi[robot_id])
+        # if old_phi[robot_id] == 0:
+        #     phi = dphi + 2 * math.pi
+        # else:
         phi = old_phi[robot_id] + dphi
         old_phi[robot_id] = phi
 
@@ -88,6 +92,7 @@ def update(robot_id):
         back1 = float(inbox[robot_id][before_ip])
         front1 = float(inbox[robot_id][next_ip])
         phi_av = (back1 + front1) / 2.
+        # phi_av = back1 + angle_distance(front1, back1) / 2.
 
         if robot_id == 0:
             phi_av -= math.pi
@@ -99,14 +104,16 @@ def update(robot_id):
         dot_phi = Omeg + kphi * (phi_av - phi)
         dot_alt = ka * (A - rz)
 
-        # dot_phi = Omeg + kphi * angle_distance(phi_av, phi)
-        # print robot_id, angle_distance(phi_av, phi), (phi_av - phi), (phi_av, phi)
+        # print robot_id, (front1, back1), angle_distance(front1, back1), phi_av, phi
+        # print robot_id, math.degrees(phi_av - phi), (math.degrees(back1), math.degrees(front1)), \
+        #     (math.degrees(phi_av), math.degrees(phi))
+
+
         # Convert to cartesian coordinates
         dot_x = dot_rho * math.cos(phi) - rho * dot_phi * math.sin(phi)
         dot_y = dot_rho * math.sin(phi) + rho * dot_phi * math.cos(phi)
 
         # robot.set_linear_velocity(robot_id, dot_x, dot_y, dot_alt)
-
 
         # Print metric
         if robot_id == 1:
